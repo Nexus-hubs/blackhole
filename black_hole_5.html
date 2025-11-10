@@ -236,152 +236,222 @@
         controls.dampingFactor = 0.05;
         controls.rotateSpeed = 0.5;
         controls.enableZoom = true;
-        controls.minDistance = 8;
-        controls.maxDistance = 30;
+        controls.minDistance = 0.1;
+        controls.maxDistance = 1000;
         controls.enablePan = false;
 
-        // Audio setup
+        // Cosmic Music System
         let audioContext;
-        let oscillator1, oscillator2, oscillator3, gainNode, filter, filter2;
-        let musicOscillators = [];
+        let masterGain;
         let audioEnabled = true;
         let soundInitialized = false;
 
-        function createCosmicSound() {
+        function createCosmicMusic() {
             if (soundInitialized) return;
             soundInitialized = true;
 
-            // Create audio context on user interaction
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-            // Low frequency rumble (simulates black hole's deep bass)
-            oscillator1 = audioContext.createOscillator();
-            oscillator1.type = 'sine';
-            oscillator1.frequency.setValueAtTime(30, audioContext.currentTime);
-
-            // Mid frequency hum (gravitational waves)
-            oscillator2 = audioContext.createOscillator();
-            oscillator2.type = 'sine';
-            oscillator2.frequency.setValueAtTime(45, audioContext.currentTime);
-
-            // High frequency cosmic wind
-            oscillator3 = audioContext.createOscillator();
-            oscillator3.type = 'triangle';
-            oscillator3.frequency.setValueAtTime(120, audioContext.currentTime);
-
-            // Primary filter for low frequencies
-            filter = audioContext.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(200, audioContext.currentTime);
-            filter.Q.setValueAtTime(1, audioContext.currentTime);
-
-            // Secondary filter for high frequencies
-            filter2 = audioContext.createBiquadFilter();
-            filter2.type = 'bandpass';
-            filter2.frequency.setValueAtTime(150, audioContext.currentTime);
-            filter2.Q.setValueAtTime(2, audioContext.currentTime);
-
-            // Gain control - get initial volume from slider
-            gainNode = audioContext.createGain();
+            // Master gain control
+            masterGain = audioContext.createGain();
             const initialVolume = document.getElementById('volume').value / 100;
-            gainNode.gain.setValueAtTime(initialVolume * 0.3, audioContext.currentTime);
+            masterGain.gain.setValueAtTime(initialVolume * 0.4, audioContext.currentTime);
+            masterGain.connect(audioContext.destination);
 
-            // Connect nodes
-            oscillator1.connect(filter);
-            oscillator2.connect(filter);
-            oscillator3.connect(filter2);
-            filter.connect(gainNode);
-            filter2.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            // Musical scales for cosmic atmosphere
+            const scales = {
+                phrygianDominant: [261.63, 277.18, 311.13, 329.63, 349.23, 369.99, 415.30, 523.25], // C Phrygian Dominant
+                minorPentatonic: [130.81, 155.56, 174.61, 196.00, 233.08, 261.63], // C Minor Pentatonic
+                wholeTone: [261.63, 293.66, 329.63, 369.99, 415.30, 466.16], // C Whole Tone
+            };
 
-            // Start oscillators
-            oscillator1.start();
-            oscillator2.start();
-            oscillator3.start();
+            let currentScale = scales.phrygianDominant;
 
-            // Subtle frequency modulation for organic feel
-            setInterval(() => {
-                if (!audioContext) return;
-                const time = audioContext.currentTime;
-                oscillator1.frequency.setTargetAtTime(30 + Math.random() * 5, time, 2);
-                oscillator2.frequency.setTargetAtTime(45 + Math.random() * 5, time, 2);
-                oscillator3.frequency.setTargetAtTime(120 + Math.random() * 30, time, 3);
-            }, 3000);
-
-            // Cosmic music layer - ethereal melody
-            // Notes in a minor pentatonic scale for eerie cosmic feel
-            const cosmicScale = [65.41, 77.78, 87.31, 98.00, 116.54, 130.81]; // C2, D#2, F2, G2, A#2, C3
-
-            function playCosmicNote() {
+            // Arpeggio pattern player
+            function playArpeggio() {
                 if (!audioContext || !audioEnabled) return;
 
-                const note = cosmicScale[Math.floor(Math.random() * cosmicScale.length)];
-                const osc = audioContext.createOscillator();
-                const noteGain = audioContext.createGain();
-                const noteFilter = audioContext.createBiquadFilter();
+                const pattern = [0, 2, 4, 3, 5, 4, 2, 1];
+                let noteIndex = 0;
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(note, audioContext.currentTime);
+                function playNote() {
+                    if (!audioContext || !audioEnabled) return;
 
-                noteFilter.type = 'lowpass';
-                noteFilter.frequency.setValueAtTime(800, audioContext.currentTime);
-                noteFilter.Q.setValueAtTime(1, audioContext.currentTime);
+                    const note = currentScale[pattern[noteIndex % pattern.length]];
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
 
-                // Envelope
-                noteGain.gain.setValueAtTime(0, audioContext.currentTime);
-                noteGain.gain.linearRampToValueAtTime(0.03, audioContext.currentTime + 2);
-                noteGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 8);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(note * 0.5, audioContext.currentTime);
 
-                osc.connect(noteFilter);
-                noteFilter.connect(noteGain);
-                noteGain.connect(gainNode);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(2000, audioContext.currentTime);
+                    filter.Q.setValueAtTime(3, audioContext.currentTime);
 
-                osc.start();
-                osc.stop(audioContext.currentTime + 8);
+                    gain.gain.setValueAtTime(0, audioContext.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2);
 
-                // Schedule next note
-                setTimeout(playCosmicNote, 4000 + Math.random() * 4000);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(masterGain);
+
+                    osc.start();
+                    osc.stop(audioContext.currentTime + 2);
+
+                    noteIndex++;
+                    if (noteIndex < pattern.length * 2) {
+                        setTimeout(playNote, 400 + Math.random() * 200);
+                    } else {
+                        setTimeout(playArpeggio, 3000 + Math.random() * 2000);
+                    }
+                }
+
+                playNote();
             }
 
-            // Start cosmic melody
-            setTimeout(playCosmicNote, 2000);
-
-            // Add ambient pad layer
-            function createPadLayer() {
+            // Chord progression
+            function playChord(frequencies, duration) {
                 if (!audioContext || !audioEnabled) return;
 
-                const padOsc1 = audioContext.createOscillator();
-                const padOsc2 = audioContext.createOscillator();
-                const padGain = audioContext.createGain();
+                frequencies.forEach((freq, i) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
 
-                padOsc1.type = 'sawtooth';
-                padOsc2.type = 'sawtooth';
-                padOsc1.frequency.setValueAtTime(55, audioContext.currentTime); // A1
-                padOsc2.frequency.setValueAtTime(55.5, audioContext.currentTime); // Slightly detuned
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioContext.currentTime);
 
-                padGain.gain.setValueAtTime(0, audioContext.currentTime);
-                padGain.gain.linearRampToValueAtTime(0.01, audioContext.currentTime + 5);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1200, audioContext.currentTime);
 
-                const padFilter = audioContext.createBiquadFilter();
-                padFilter.type = 'lowpass';
-                padFilter.frequency.setValueAtTime(400, audioContext.currentTime);
+                    gain.gain.setValueAtTime(0, audioContext.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.04, audioContext.currentTime + 1);
+                    gain.gain.linearRampToValueAtTime(0.03, audioContext.currentTime + duration - 1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
 
-                padOsc1.connect(padFilter);
-                padOsc2.connect(padFilter);
-                padFilter.connect(padGain);
-                padGain.connect(gainNode);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(masterGain);
 
-                padOsc1.start();
-                padOsc2.start();
+                    osc.start();
+                    osc.stop(audioContext.currentTime + duration);
+                });
             }
 
-            createPadLayer();
+            // Chord progression sequence
+            function playChordProgression() {
+                if (!audioContext || !audioEnabled) return;
+
+                const chords = [
+                    [130.81, 155.56, 196.00], // Cm
+                    [116.54, 146.83, 174.61], // Bb
+                    [98.00, 123.47, 146.83],  // Ab
+                    [110.00, 130.81, 164.81], // Am
+                ];
+
+                let chordIndex = 0;
+                function playNext() {
+                    if (!audioContext || !audioEnabled) return;
+                    playChord(chords[chordIndex % chords.length], 6);
+                    chordIndex++;
+                    if (chordIndex < 8) {
+                        setTimeout(playNext, 5500);
+                    } else {
+                        setTimeout(playChordProgression, 8000);
+                    }
+                }
+                playNext();
+            }
+
+            // Ambient texture
+            function createAmbientTexture() {
+                if (!audioContext || !audioEnabled) return;
+
+                const osc1 = audioContext.createOscillator();
+                const osc2 = audioContext.createOscillator();
+                const osc3 = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+
+                osc1.type = 'sine';
+                osc2.type = 'sine';
+                osc3.type = 'sine';
+
+                const baseFreq = 65.41;
+                osc1.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+                osc2.frequency.setValueAtTime(baseFreq * 1.5, audioContext.currentTime);
+                osc3.frequency.setValueAtTime(baseFreq * 2.02, audioContext.currentTime);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(500, audioContext.currentTime);
+                filter.Q.setValueAtTime(1, audioContext.currentTime);
+
+                gain.gain.setValueAtTime(0.02, audioContext.currentTime);
+
+                osc1.connect(filter);
+                osc2.connect(filter);
+                osc3.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGain);
+
+                osc1.start();
+                osc2.start();
+                osc3.start();
+
+                // Slow modulation
+                setInterval(() => {
+                    if (!audioContext || !audioEnabled) return;
+                    const time = audioContext.currentTime;
+                    const variation = 0.5 + Math.random() * 0.5;
+                    osc1.frequency.setTargetAtTime(baseFreq * variation, time, 4);
+                    osc2.frequency.setTargetAtTime(baseFreq * 1.5 * variation, time, 5);
+                    osc3.frequency.setTargetAtTime(baseFreq * 2.02 * variation, time, 6);
+                }, 8000);
+            }
+
+            // Bell-like tones
+            function playBell() {
+                if (!audioContext || !audioEnabled) return;
+
+                const baseFreq = currentScale[Math.floor(Math.random() * currentScale.length)];
+
+                // Bell harmonics
+                const partials = [1, 2.76, 5.4, 8.93];
+
+                partials.forEach((partial, i) => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(baseFreq * partial * 0.25, audioContext.currentTime);
+
+                    const amplitude = 0.1 / (i + 1);
+                    gain.gain.setValueAtTime(amplitude, audioContext.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 4);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+
+                    osc.start();
+                    osc.stop(audioContext.currentTime + 4);
+                });
+
+                setTimeout(playBell, 6000 + Math.random() * 8000);
+            }
+
+            // Start all music layers
+            setTimeout(createAmbientTexture, 100);
+            setTimeout(playChordProgression, 2000);
+            setTimeout(playArpeggio, 8000);
+            setTimeout(playBell, 12000);
         }
 
         // Start overlay interaction
         document.getElementById('startOverlay').addEventListener('click', function() {
-            // Create and start sound on user interaction
-            createCosmicSound();
+            // Create and start music on user interaction
+            createCosmicMusic();
             this.style.display = 'none';
         });
 
@@ -585,6 +655,70 @@
         pointLight.position.set(0, 0, 0);
         scene.add(pointLight);
 
+        // Dynamic Information System
+        const blackHoleFacts = [
+            { label: "Type", value: "Supermassive Black Hole" },
+            { label: "Mass", value: "100 Million Solar Masses" },
+            { label: "Event Horizon", value: "2.95×10⁸ km" },
+            { label: "Rotation", value: "Near-Maximal (a ≈ 1)" },
+            { label: "Time Dilation", value: "Extreme near event horizon" },
+            { label: "Schwarzschild Radius", value: "~295 million kilometers" },
+            { label: "Surface Gravity", value: "1.5×10⁶ m/s²" },
+            { label: "Escape Velocity", value: "Speed of light (c)" },
+            { label: "Accretion Disk Temp", value: "~10⁶ Kelvin" },
+            { label: "Spaghettification Zone", value: "Beyond tidal radius" },
+            { label: "Photon Sphere", value: "1.5× event horizon radius" },
+            { label: "Ergosphere", value: "Rotating spacetime region" },
+            { label: "Innermost Stable Orbit", value: "3× Schwarzschild radius" },
+            { label: "Relativistic Jets", value: "Near light-speed plasma" },
+            { label: "Gravitational Redshift", value: "z → ∞ at horizon" },
+            { label: "Frame Dragging", value: "Extreme Kerr geometry" },
+            { label: "Information Paradox", value: "Quantum state unknown" },
+            { label: "Singularity", value: "Ring-shaped (Kerr type)" },
+            { label: "Hawking Temperature", value: "6.17×10⁻¹⁴ K" },
+            { label: "Evaporation Time", value: "~10⁹⁹ years" },
+            { label: "Orbital Period (ISCO)", value: "~2 milliseconds" },
+            { label: "Tidal Forces", value: "Extreme near horizon" },
+            { label: "Causality Violation", value: "Inside ergosphere" },
+            { label: "Entropy", value: "10⁷⁷ bits (Bekenstein)" },
+            { label: "Luminosity", value: "10⁴⁶ erg/s (active)" },
+            { label: "Magnetic Fields", value: "~10⁴ Gauss (disk)" },
+            { label: "Spin Parameter", value: "0.998 (near-extremal)" },
+            { label: "Doppler Effect", value: "Asymmetric disk emission" },
+            { label: "Gravitational Lensing", value: "Einstein ring visible" },
+            { label: "Coordinate System", value: "Boyer-Lindquist coords" }
+        ];
+
+        let usedFacts = [];
+        let currentFactIndex = 0;
+
+        function updateInfoPanel() {
+            if (usedFacts.length === blackHoleFacts.length) {
+                usedFacts = [];
+            }
+
+            const availableFacts = blackHoleFacts.filter((_, index) => !usedFacts.includes(index));
+            const randomIndex = Math.floor(Math.random() * availableFacts.length);
+            const factIndex = blackHoleFacts.indexOf(availableFacts[randomIndex]);
+            usedFacts.push(factIndex);
+
+            const selectedFacts = [];
+            for (let i = 0; i < 7; i++) {
+                const fact = availableFacts[(randomIndex + i) % availableFacts.length];
+                if (fact) selectedFacts.push(fact);
+            }
+
+            const infoPanel = document.getElementById('infoPanel');
+            let html = '<h3>GARGANTUA</h3>';
+            selectedFacts.forEach(fact => {
+                html += `<div class="info-item"><span class="info-label">${fact.label}:</span> ${fact.value}</div>`;
+            });
+            infoPanel.innerHTML = html;
+        }
+
+        // Update info every 8 seconds
+        setInterval(updateInfoPanel, 8000);
+
         // Controls
         let infoPanelVisible = true;
         document.getElementById('toggleInfo').addEventListener('click', function() {
@@ -595,23 +729,23 @@
 
         document.getElementById('soundToggle').addEventListener('click', function() {
             if (!soundInitialized) {
-                createCosmicSound();
+                createCosmicMusic();
             }
             audioEnabled = !audioEnabled;
-            if (gainNode && audioContext) {
+            if (masterGain && audioContext) {
                 const volume = document.getElementById('volume').value / 100;
-                gainNode.gain.setValueAtTime(audioEnabled ? volume * 0.3 : 0, audioContext.currentTime);
+                masterGain.gain.setValueAtTime(audioEnabled ? volume * 0.4 : 0, audioContext.currentTime);
             }
             this.textContent = `SOUND: ${audioEnabled ? 'ON' : 'OFF'}`;
         });
 
         document.getElementById('volume').addEventListener('input', function() {
             if (!soundInitialized) {
-                createCosmicSound();
+                createCosmicMusic();
             }
             const volume = this.value / 100;
-            if (gainNode && audioContext && audioEnabled) {
-                gainNode.gain.setValueAtTime(volume * 0.3, audioContext.currentTime);
+            if (masterGain && audioContext && audioEnabled) {
+                masterGain.gain.setValueAtTime(volume * 0.4, audioContext.currentTime);
             }
         });
 
