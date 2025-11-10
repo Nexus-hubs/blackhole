@@ -240,218 +240,67 @@
         controls.maxDistance = 1000;
         controls.enablePan = false;
 
-        // Cosmic Music System
+        // Particle Pop Sound System
         let audioContext;
         let masterGain;
         let audioEnabled = true;
         let soundInitialized = false;
+        let lastPopTime = 0;
+        const popCooldown = 50; // Minimum ms between pops to avoid overwhelming
 
-        function createCosmicMusic() {
+        function initAudio() {
             if (soundInitialized) return;
             soundInitialized = true;
 
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-            // Master gain control
+            // Master gain control - much lower volume for subtle pops
             masterGain = audioContext.createGain();
             const initialVolume = document.getElementById('volume').value / 100;
-            masterGain.gain.setValueAtTime(initialVolume * 0.4, audioContext.currentTime);
+            masterGain.gain.setValueAtTime(initialVolume * 0.15, audioContext.currentTime);
             masterGain.connect(audioContext.destination);
+        }
 
-            // Musical scales for cosmic atmosphere
-            const scales = {
-                phrygianDominant: [261.63, 277.18, 311.13, 329.63, 349.23, 369.99, 415.30, 523.25], // C Phrygian Dominant
-                minorPentatonic: [130.81, 155.56, 174.61, 196.00, 233.08, 261.63], // C Minor Pentatonic
-                wholeTone: [261.63, 293.66, 329.63, 369.99, 415.30, 466.16], // C Whole Tone
-            };
+        // Create a subtle particle pop sound
+        function playParticlePop(distance, velocity) {
+            if (!audioContext || !audioEnabled) return;
 
-            let currentScale = scales.phrygianDominant;
+            const now = Date.now();
+            if (now - lastPopTime < popCooldown) return; // Rate limiting
+            lastPopTime = now;
 
-            // Arpeggio pattern player
-            function playArpeggio() {
-                if (!audioContext || !audioEnabled) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
 
-                const pattern = [0, 2, 4, 3, 5, 4, 2, 1];
-                let noteIndex = 0;
+            // Frequency based on distance (closer = higher pitch)
+            const baseFreq = 800 + (1000 / Math.max(distance, 3));
+            osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, audioContext.currentTime + 0.1);
 
-                function playNote() {
-                    if (!audioContext || !audioEnabled) return;
+            osc.type = 'sine';
 
-                    const note = currentScale[pattern[noteIndex % pattern.length]];
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
-                    const filter = audioContext.createBiquadFilter();
+            // High-pass filter for crisp, subtle pop
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(400, audioContext.currentTime);
 
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(note * 0.5, audioContext.currentTime);
+            // Very short, quick pop envelope
+            const amplitude = Math.min(velocity * 0.02, 0.08); // Based on velocity
+            gain.gain.setValueAtTime(amplitude, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
 
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(2000, audioContext.currentTime);
-                    filter.Q.setValueAtTime(3, audioContext.currentTime);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
 
-                    gain.gain.setValueAtTime(0, audioContext.currentTime);
-                    gain.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.1);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 2);
-
-                    osc.connect(filter);
-                    filter.connect(gain);
-                    gain.connect(masterGain);
-
-                    osc.start();
-                    osc.stop(audioContext.currentTime + 2);
-
-                    noteIndex++;
-                    if (noteIndex < pattern.length * 2) {
-                        setTimeout(playNote, 400 + Math.random() * 200);
-                    } else {
-                        setTimeout(playArpeggio, 3000 + Math.random() * 2000);
-                    }
-                }
-
-                playNote();
-            }
-
-            // Chord progression
-            function playChord(frequencies, duration) {
-                if (!audioContext || !audioEnabled) return;
-
-                frequencies.forEach((freq, i) => {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
-                    const filter = audioContext.createBiquadFilter();
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, audioContext.currentTime);
-
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(1200, audioContext.currentTime);
-
-                    gain.gain.setValueAtTime(0, audioContext.currentTime);
-                    gain.gain.linearRampToValueAtTime(0.04, audioContext.currentTime + 1);
-                    gain.gain.linearRampToValueAtTime(0.03, audioContext.currentTime + duration - 1);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
-
-                    osc.connect(filter);
-                    filter.connect(gain);
-                    gain.connect(masterGain);
-
-                    osc.start();
-                    osc.stop(audioContext.currentTime + duration);
-                });
-            }
-
-            // Chord progression sequence
-            function playChordProgression() {
-                if (!audioContext || !audioEnabled) return;
-
-                const chords = [
-                    [130.81, 155.56, 196.00], // Cm
-                    [116.54, 146.83, 174.61], // Bb
-                    [98.00, 123.47, 146.83],  // Ab
-                    [110.00, 130.81, 164.81], // Am
-                ];
-
-                let chordIndex = 0;
-                function playNext() {
-                    if (!audioContext || !audioEnabled) return;
-                    playChord(chords[chordIndex % chords.length], 6);
-                    chordIndex++;
-                    if (chordIndex < 8) {
-                        setTimeout(playNext, 5500);
-                    } else {
-                        setTimeout(playChordProgression, 8000);
-                    }
-                }
-                playNext();
-            }
-
-            // Ambient texture
-            function createAmbientTexture() {
-                if (!audioContext || !audioEnabled) return;
-
-                const osc1 = audioContext.createOscillator();
-                const osc2 = audioContext.createOscillator();
-                const osc3 = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                const filter = audioContext.createBiquadFilter();
-
-                osc1.type = 'sine';
-                osc2.type = 'sine';
-                osc3.type = 'sine';
-
-                const baseFreq = 65.41;
-                osc1.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
-                osc2.frequency.setValueAtTime(baseFreq * 1.5, audioContext.currentTime);
-                osc3.frequency.setValueAtTime(baseFreq * 2.02, audioContext.currentTime);
-
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(500, audioContext.currentTime);
-                filter.Q.setValueAtTime(1, audioContext.currentTime);
-
-                gain.gain.setValueAtTime(0.02, audioContext.currentTime);
-
-                osc1.connect(filter);
-                osc2.connect(filter);
-                osc3.connect(filter);
-                filter.connect(gain);
-                gain.connect(masterGain);
-
-                osc1.start();
-                osc2.start();
-                osc3.start();
-
-                // Slow modulation
-                setInterval(() => {
-                    if (!audioContext || !audioEnabled) return;
-                    const time = audioContext.currentTime;
-                    const variation = 0.5 + Math.random() * 0.5;
-                    osc1.frequency.setTargetAtTime(baseFreq * variation, time, 4);
-                    osc2.frequency.setTargetAtTime(baseFreq * 1.5 * variation, time, 5);
-                    osc3.frequency.setTargetAtTime(baseFreq * 2.02 * variation, time, 6);
-                }, 8000);
-            }
-
-            // Bell-like tones
-            function playBell() {
-                if (!audioContext || !audioEnabled) return;
-
-                const baseFreq = currentScale[Math.floor(Math.random() * currentScale.length)];
-
-                // Bell harmonics
-                const partials = [1, 2.76, 5.4, 8.93];
-
-                partials.forEach((partial, i) => {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
-
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(baseFreq * partial * 0.25, audioContext.currentTime);
-
-                    const amplitude = 0.1 / (i + 1);
-                    gain.gain.setValueAtTime(amplitude, audioContext.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 4);
-
-                    osc.connect(gain);
-                    gain.connect(masterGain);
-
-                    osc.start();
-                    osc.stop(audioContext.currentTime + 4);
-                });
-
-                setTimeout(playBell, 6000 + Math.random() * 8000);
-            }
-
-            // Start all music layers
-            setTimeout(createAmbientTexture, 100);
-            setTimeout(playChordProgression, 2000);
-            setTimeout(playArpeggio, 8000);
-            setTimeout(playBell, 12000);
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.08);
         }
 
         // Start overlay interaction
         document.getElementById('startOverlay').addEventListener('click', function() {
-            // Create and start music on user interaction
-            createCosmicMusic();
+            // Initialize audio on user interaction
+            initAudio();
             this.style.display = 'none';
         });
 
@@ -729,23 +578,23 @@
 
         document.getElementById('soundToggle').addEventListener('click', function() {
             if (!soundInitialized) {
-                createCosmicMusic();
+                initAudio();
             }
             audioEnabled = !audioEnabled;
             if (masterGain && audioContext) {
                 const volume = document.getElementById('volume').value / 100;
-                masterGain.gain.setValueAtTime(audioEnabled ? volume * 0.4 : 0, audioContext.currentTime);
+                masterGain.gain.setValueAtTime(audioEnabled ? volume * 0.15 : 0, audioContext.currentTime);
             }
             this.textContent = `SOUND: ${audioEnabled ? 'ON' : 'OFF'}`;
         });
 
         document.getElementById('volume').addEventListener('input', function() {
             if (!soundInitialized) {
-                createCosmicMusic();
+                initAudio();
             }
             const volume = this.value / 100;
             if (masterGain && audioContext && audioEnabled) {
-                masterGain.gain.setValueAtTime(volume * 0.4, audioContext.currentTime);
+                masterGain.gain.setValueAtTime(volume * 0.15, audioContext.currentTime);
             }
         });
 
@@ -777,33 +626,43 @@
                 const x = positions[i3];
                 const y = positions[i3 + 1];
                 const z = positions[i3 + 2];
-                
+
                 const distance = Math.sqrt(x * x + y * y + z * z);
-                
+
                 // Gravitational attraction - stronger when closer
                 // Speed inversely proportional to distance
                 const speedFactor = 1.0 / (distance * 0.5);
                 const force = 0.8 / (distance * distance);
-                
+
                 velocities[i].x -= (x / distance) * force * speedFactor;
                 velocities[i].y -= (y / distance) * force * speedFactor;
                 velocities[i].z -= (z / distance) * force * speedFactor;
-                
+
                 // Apply velocity
                 positions[i3] += velocities[i].x;
                 positions[i3 + 1] += velocities[i].y;
                 positions[i3 + 2] += velocities[i].z;
-                
+
                 // Reset if too close to singularity
                 if (distance < 2.5) {
+                    // Calculate velocity magnitude for sound
+                    const velocity = Math.sqrt(
+                        velocities[i].x * velocities[i].x +
+                        velocities[i].y * velocities[i].y +
+                        velocities[i].z * velocities[i].z
+                    );
+
+                    // Play subtle pop sound when particle crosses event horizon
+                    playParticlePop(distance, velocity);
+
                     const radius = 20 + Math.random() * 30;
                     const theta = Math.random() * Math.PI * 2;
                     const phi = Math.random() * Math.PI;
-                    
+
                     positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
                     positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
                     positions[i3 + 2] = radius * Math.cos(phi);
-                    
+
                     velocities[i].set(0, 0, 0);
                 }
             }
@@ -815,6 +674,13 @@
                 const distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
 
                 if (distance < 2.5) {
+                    // Calculate velocity magnitude for sound
+                    const vel = planet.userData.velocity;
+                    const velocity = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+
+                    // Play pop sound when planet crosses event horizon
+                    playParticlePop(distance, velocity * 10); // Amplify for planets
+
                     // Planet crossed event horizon - respawn
                     scene.remove(planet);
                     planets.splice(index, 1);
