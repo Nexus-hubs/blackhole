@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gargantua Black Hole</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #info {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+        
+        #subtitle {
+            font-size: 0.9em;
+            opacity: 0.7;
+            letter-spacing: 3px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        button {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #FFFFFF;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        button:hover {
+            background: rgba(0, 181, 201, 0.3);
+            border-color: #00B5C9;
+        }
+        
+        #volumeControl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+            accent-color: #00B5C9;
+        }
+        
+        .label {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+        
+        #startOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+        
+        #startOverlay h2 {
+            font-size: 3em;
+            font-weight: 300;
+            letter-spacing: 10px;
+            margin-bottom: 30px;
+            color: #00B5C9;
+        }
+        
+        #startOverlay p {
+            font-size: 1.2em;
+            opacity: 0.7;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="startOverlay">
+        <h2>GARGANTUA</h2>
+        <p>CLICK TO ENTER</p>
+    </div>
+    
+    <div id="container"></div>
+    
+    <div id="info">
+        <h1>GARGANTUA</h1>
+        <div id="subtitle">SUPERMASSIVE BLACK HOLE</div>
+    </div>
+    
+    <div id="controls">
+        <button id="soundToggle">SOUND: ON</button>
+        <div id="volumeControl">
+            <span class="label">VOLUME</span>
+            <input type="range" id="volume" min="0" max="100" value="30">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        camera.position.set(0, 5, 15);
+        camera.lookAt(0, 0, 0);
+
+        // OrbitControls for 360-degree rotation
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 0.5;
+        controls.enableZoom = true;
+        controls.minDistance = 8;
+        controls.maxDistance = 30;
+        controls.enablePan = false;
+
+        // Audio setup
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillator1, oscillator2, gainNode, filter;
+        let audioEnabled = true;
+
+        function createCosmicSound() {
+            // Low frequency rumble
+            oscillator1 = audioContext.createOscillator();
+            oscillator1.type = 'sine';
+            oscillator1.frequency.setValueAtTime(30, audioContext.currentTime);
+            
+            // Mid frequency hum
+            oscillator2 = audioContext.createOscillator();
+            oscillator2.type = 'sine';
+            oscillator2.frequency.setValueAtTime(45, audioContext.currentTime);
+            
+            // Filter for cosmic effect
+            filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(200, audioContext.currentTime);
+            filter.Q.setValueAtTime(1, audioContext.currentTime);
+            
+            // Gain control
+            gainNode = audioContext.createGain();
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+            
+            // Connect nodes
+            oscillator1.connect(filter);
+            oscillator2.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Start oscillators
+            oscillator1.start();
+            oscillator2.start();
+            
+            // Subtle frequency modulation
+            setInterval(() => {
+                const time = audioContext.currentTime;
+                oscillator1.frequency.setTargetAtTime(30 + Math.random() * 5, time, 2);
+                oscillator2.frequency.setTargetAtTime(45 + Math.random() * 5, time, 2);
+            }, 3000);
+        }
+
+        createCosmicSound();
+
+        // Start overlay interaction
+        document.getElementById('startOverlay').addEventListener('click', function() {
+            // Resume audio context on user interaction
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            this.style.display = 'none';
+        });
+
+        // Event horizon (black sphere)
+        const eventHorizonGeometry = new THREE.SphereGeometry(2, 64, 64);
+        const eventHorizonMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x000000,
+            transparent: true,
+            opacity: 1
+        });
+        const eventHorizon = new THREE.Mesh(eventHorizonGeometry, eventHorizonMaterial);
+        scene.add(eventHorizon);
+
+        // Photon sphere (subtle glow)
+        const photonSphereGeometry = new THREE.SphereGeometry(2.1, 64, 64);
+        const photonSphereMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const photonSphere = new THREE.Mesh(photonSphereGeometry, photonSphereMaterial);
+        scene.add(photonSphere);
+
+        // Accretion disk shader
+        const diskVertexShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            void main() {
+                vUv = uv;
+                vPosition = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        const diskFragmentShader = `
+            uniform float time;
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            
+            void main() {
+                vec2 center = vec2(0.5, 0.5);
+                float dist = distance(vUv, center) * 2.0;
+                
+                // Inner disk hole
+                if (dist < 0.3) {
+                    discard;
+                }
+                
+                // Doppler shift - approaching side brighter
+                float angle = atan(vPosition.y, vPosition.x);
+                float dopplerBoost = 1.0 + 0.4 * sin(angle + time * 0.5);
+                
+                // Temperature gradient (inner hot, outer cool)
+                float temp = 1.0 - smoothstep(0.3, 1.0, dist);
+                
+                // Color based on temperature
+                vec3 innerColor = vec3(1.0, 0.9, 0.8); // White hot
+                vec3 midColor = vec3(1.0, 0.6, 0.3);   // Orange
+                vec3 outerColor = vec3(0.8, 0.4, 0.2); // Reddish
+                
+                vec3 color = mix(outerColor, innerColor, temp * dopplerBoost);
+                
+                // Intensity falloff
+                float intensity = smoothstep(1.0, 0.3, dist) * 0.9;
+                intensity *= dopplerBoost;
+                
+                // Add turbulence
+                float turbulence = sin(dist * 20.0 - time * 2.0) * 0.1 + 0.9;
+                intensity *= turbulence;
+                
+                gl_FragColor = vec4(color * intensity, intensity * 0.8);
+            }
+        `;
+
+        // Main accretion disk
+        const diskGeometry = new THREE.RingGeometry(2.5, 8, 128, 64);
+        const diskMaterial = new THREE.ShaderMaterial({
+            vertexShader: diskVertexShader,
+            fragmentShader: diskFragmentShader,
+            uniforms: {
+                time: { value: 0 }
+            },
+            transparent: true,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const disk = new THREE.Mesh(diskGeometry, diskMaterial);
+        disk.rotation.x = Math.PI / 2;
+        scene.add(disk);
+
+        // Upper gravitational lensing effect (multiple rings for depth)
+        const lensRingMaterial = new THREE.ShaderMaterial({
+            vertexShader: diskVertexShader,
+            fragmentShader: `
+                uniform float time;
+                varying vec2 vUv;
+                void main() {
+                    vec2 center = vec2(0.5, 0.5);
+                    float dist = distance(vUv, center) * 2.0;
+                    float intensity = smoothstep(1.0, 0.5, dist) * 0.5;
+                    intensity *= (0.8 + 0.2 * sin(time * 2.0));
+                    vec3 color = vec3(1.0, 0.7, 0.4);
+                    gl_FragColor = vec4(color * intensity, intensity * 0.4);
+                }
+            `,
+            uniforms: {
+                time: { value: 0 }
+            },
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+
+        // Create multiple lensing rings at different angles
+        const lensRings = [];
+        for (let i = 0; i < 3; i++) {
+            const ringGeom = new THREE.RingGeometry(3.5 + i * 0.5, 6 + i * 0.5, 128);
+            const ring = new THREE.Mesh(ringGeom, lensRingMaterial.clone());
+            ring.rotation.x = Math.PI / 2 + (i - 1) * 0.15;
+            ring.position.y = (i - 1) * 0.3;
+            scene.add(ring);
+            lensRings.push(ring);
+        }
+
+        // Particles (stars being attracted)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particleCount = 2000;
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+        const lifetimes = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            const radius = 20 + Math.random() * 30;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            
+            positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i3 + 2] = radius * Math.cos(phi);
+            
+            velocities.push(new THREE.Vector3(0, 0, 0));
+            lifetimes.push(Math.random());
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0xFFFFFF,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xFFAA66, 2, 100);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // Controls
+        document.getElementById('soundToggle').addEventListener('click', function() {
+            audioEnabled = !audioEnabled;
+            gainNode.gain.setValueAtTime(audioEnabled ? 0.15 : 0, audioContext.currentTime);
+            this.textContent = `SOUND: ${audioEnabled ? 'ON' : 'OFF'}`;
+        });
+
+        document.getElementById('volume').addEventListener('input', function() {
+            const volume = this.value / 100;
+            gainNode.gain.setValueAtTime(volume * 0.3, audioContext.currentTime);
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Update shader uniforms
+            diskMaterial.uniforms.time.value = time;
+            lensRings.forEach(ring => {
+                ring.material.uniforms.time.value = time;
+            });
+
+            // Rotate accretion disk and lensing rings
+            disk.rotation.z += 0.003;
+            lensRings.forEach((ring, idx) => {
+                ring.rotation.z += 0.002 * (1 + idx * 0.2);
+            });
+
+            // Rotate event horizon
+            eventHorizon.rotation.y += 0.001;
+
+            // Update particles - velocity inversely proportional to distance
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const x = positions[i3];
+                const y = positions[i3 + 1];
+                const z = positions[i3 + 2];
+                
+                const distance = Math.sqrt(x * x + y * y + z * z);
+                
+                // Gravitational attraction - stronger when closer
+                // Speed inversely proportional to distance
+                const speedFactor = 1.0 / (distance * 0.5);
+                const force = 0.8 / (distance * distance);
+                
+                velocities[i].x -= (x / distance) * force * speedFactor;
+                velocities[i].y -= (y / distance) * force * speedFactor;
+                velocities[i].z -= (z / distance) * force * speedFactor;
+                
+                // Apply velocity
+                positions[i3] += velocities[i].x;
+                positions[i3 + 1] += velocities[i].y;
+                positions[i3 + 2] += velocities[i].z;
+                
+                // Reset if too close to singularity
+                if (distance < 2.5) {
+                    const radius = 20 + Math.random() * 30;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    
+                    positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i3 + 2] = radius * Math.cos(phi);
+                    
+                    velocities[i].set(0, 0, 0);
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Update controls
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
