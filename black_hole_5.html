@@ -173,57 +173,77 @@
         controls.enablePan = false;
 
         // Audio setup
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let oscillator1, oscillator2, gainNode, filter;
+        let audioContext;
+        let oscillator1, oscillator2, oscillator3, gainNode, filter, filter2;
         let audioEnabled = true;
+        let soundInitialized = false;
 
         function createCosmicSound() {
-            // Low frequency rumble
+            if (soundInitialized) return;
+            soundInitialized = true;
+
+            // Create audio context on user interaction
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Low frequency rumble (simulates black hole's deep bass)
             oscillator1 = audioContext.createOscillator();
             oscillator1.type = 'sine';
             oscillator1.frequency.setValueAtTime(30, audioContext.currentTime);
-            
-            // Mid frequency hum
+
+            // Mid frequency hum (gravitational waves)
             oscillator2 = audioContext.createOscillator();
             oscillator2.type = 'sine';
             oscillator2.frequency.setValueAtTime(45, audioContext.currentTime);
-            
-            // Filter for cosmic effect
+
+            // High frequency cosmic wind
+            oscillator3 = audioContext.createOscillator();
+            oscillator3.type = 'triangle';
+            oscillator3.frequency.setValueAtTime(120, audioContext.currentTime);
+
+            // Primary filter for low frequencies
             filter = audioContext.createBiquadFilter();
             filter.type = 'lowpass';
             filter.frequency.setValueAtTime(200, audioContext.currentTime);
             filter.Q.setValueAtTime(1, audioContext.currentTime);
-            
-            // Gain control
+
+            // Secondary filter for high frequencies
+            filter2 = audioContext.createBiquadFilter();
+            filter2.type = 'bandpass';
+            filter2.frequency.setValueAtTime(150, audioContext.currentTime);
+            filter2.Q.setValueAtTime(2, audioContext.currentTime);
+
+            // Gain control - get initial volume from slider
             gainNode = audioContext.createGain();
-            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-            
+            const initialVolume = document.getElementById('volume').value / 100;
+            gainNode.gain.setValueAtTime(initialVolume * 0.3, audioContext.currentTime);
+
             // Connect nodes
             oscillator1.connect(filter);
             oscillator2.connect(filter);
+            oscillator3.connect(filter2);
             filter.connect(gainNode);
+            filter2.connect(gainNode);
             gainNode.connect(audioContext.destination);
-            
+
             // Start oscillators
             oscillator1.start();
             oscillator2.start();
-            
-            // Subtle frequency modulation
+            oscillator3.start();
+
+            // Subtle frequency modulation for organic feel
             setInterval(() => {
+                if (!audioContext) return;
                 const time = audioContext.currentTime;
                 oscillator1.frequency.setTargetAtTime(30 + Math.random() * 5, time, 2);
                 oscillator2.frequency.setTargetAtTime(45 + Math.random() * 5, time, 2);
+                oscillator3.frequency.setTargetAtTime(120 + Math.random() * 30, time, 3);
             }, 3000);
         }
 
-        createCosmicSound();
-
         // Start overlay interaction
         document.getElementById('startOverlay').addEventListener('click', function() {
-            // Resume audio context on user interaction
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
+            // Create and start sound on user interaction
+            createCosmicSound();
             this.style.display = 'none';
         });
 
@@ -393,14 +413,25 @@
 
         // Controls
         document.getElementById('soundToggle').addEventListener('click', function() {
+            if (!soundInitialized) {
+                createCosmicSound();
+            }
             audioEnabled = !audioEnabled;
-            gainNode.gain.setValueAtTime(audioEnabled ? 0.15 : 0, audioContext.currentTime);
+            if (gainNode && audioContext) {
+                const volume = document.getElementById('volume').value / 100;
+                gainNode.gain.setValueAtTime(audioEnabled ? volume * 0.3 : 0, audioContext.currentTime);
+            }
             this.textContent = `SOUND: ${audioEnabled ? 'ON' : 'OFF'}`;
         });
 
         document.getElementById('volume').addEventListener('input', function() {
+            if (!soundInitialized) {
+                createCosmicSound();
+            }
             const volume = this.value / 100;
-            gainNode.gain.setValueAtTime(volume * 0.3, audioContext.currentTime);
+            if (gainNode && audioContext && audioEnabled) {
+                gainNode.gain.setValueAtTime(volume * 0.3, audioContext.currentTime);
+            }
         });
 
         // Animation loop
