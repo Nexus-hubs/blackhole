@@ -339,6 +339,7 @@
         const performanceSettings = {
             particleCount: isMobile ? 1000 : 2000,
             planetCount: isMobile ? 5 : 8,
+            asteroidCount: isMobile ? 15 : 30,
             antialias: !isMobile,
             pixelRatio: isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio
         };
@@ -650,6 +651,70 @@
             createPlanet();
         }
 
+        // Asteroid Field System
+        const asteroids = [];
+        const asteroidColors = [0x8B7355, 0x696969, 0x5C4033, 0x808080, 0x654321];
+        const asteroidCount = performanceSettings.asteroidCount;
+
+        function createAsteroid() {
+            // Create irregular asteroid shape
+            const size = 0.15 + Math.random() * 0.35;
+            const detail = isMobile ? 0 : 1; // Lower detail on mobile
+            const geometry = new THREE.IcosahedronGeometry(size, detail);
+
+            // Randomly distort vertices for irregular shape
+            const positions = geometry.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+                const vertex = new THREE.Vector3(
+                    positions.getX(i),
+                    positions.getY(i),
+                    positions.getZ(i)
+                );
+                const distortion = 0.7 + Math.random() * 0.6;
+                vertex.multiplyScalar(distortion);
+                positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshStandardMaterial({
+                color: asteroidColors[Math.floor(Math.random() * asteroidColors.length)],
+                roughness: 0.9,
+                metalness: 0.1,
+                flatShading: true
+            });
+
+            const asteroid = new THREE.Mesh(geometry, material);
+
+            // Random starting position - closer to accretion disk
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 12 + Math.random() * 20;
+            asteroid.position.x = Math.cos(angle) * distance;
+            asteroid.position.z = Math.sin(angle) * distance;
+            asteroid.position.y = (Math.random() - 0.5) * 8;
+
+            // Random rotation for variety
+            asteroid.rotation.x = Math.random() * Math.PI * 2;
+            asteroid.rotation.y = Math.random() * Math.PI * 2;
+            asteroid.rotation.z = Math.random() * Math.PI * 2;
+
+            // Physics data
+            asteroid.userData.velocity = new THREE.Vector3(0, 0, 0);
+            asteroid.userData.orbitalSpeed = 0.02 + Math.random() * 0.03;
+            asteroid.userData.rotationSpeed = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.04,
+                (Math.random() - 0.5) * 0.04,
+                (Math.random() - 0.5) * 0.04
+            );
+
+            scene.add(asteroid);
+            asteroids.push(asteroid);
+        }
+
+        // Create asteroid field
+        for (let i = 0; i < asteroidCount; i++) {
+            createAsteroid();
+        }
+
         // Lighting
         const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
         scene.add(ambientLight);
@@ -689,7 +754,11 @@
             { label: "Spin Parameter", value: "0.998 (near-extremal)" },
             { label: "Doppler Effect", value: "Asymmetric disk emission" },
             { label: "Gravitational Lensing", value: "Einstein ring visible" },
-            { label: "Coordinate System", value: "Boyer-Lindquist coords" }
+            { label: "Coordinate System", value: "Boyer-Lindquist coords" },
+            { label: "Asteroid Field", value: `${asteroidCount} rocky debris objects` },
+            { label: "Asteroid Composition", value: "Iron, silicate, carbon-rich" },
+            { label: "Asteroid Orbit", value: "Erratic, decaying paths" },
+            { label: "Debris Accretion Rate", value: "Continuous infall" }
         ];
 
         let usedFacts = [];
@@ -864,6 +933,52 @@
                     // Rotate planet
                     planet.rotation.x += 0.01;
                     planet.rotation.y += 0.015;
+                }
+            });
+
+            // Update asteroids
+            asteroids.forEach((asteroid, index) => {
+                const pos = asteroid.position;
+                const distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+
+                if (distance < 2.5) {
+                    // Calculate velocity magnitude for sound
+                    const vel = asteroid.userData.velocity;
+                    const velocity = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+
+                    // Play pop sound when asteroid crosses event horizon (slightly different pitch)
+                    playParticlePop(distance, velocity * 8);
+
+                    // Asteroid crossed event horizon - respawn
+                    scene.remove(asteroid);
+                    asteroids.splice(index, 1);
+                    createAsteroid();
+                } else {
+                    // Calculate gravitational pull (asteroids are affected more than planets)
+                    const force = 12.0 / (distance * distance);
+                    const dirX = -pos.x / distance;
+                    const dirY = -pos.y / distance;
+                    const dirZ = -pos.z / distance;
+
+                    // Add orbital motion (perpendicular to radial direction)
+                    const orbitalX = -dirZ * asteroid.userData.orbitalSpeed;
+                    const orbitalZ = dirX * asteroid.userData.orbitalSpeed;
+
+                    // Update velocity
+                    asteroid.userData.velocity.x += dirX * force + orbitalX;
+                    asteroid.userData.velocity.y += dirY * force;
+                    asteroid.userData.velocity.z += dirZ * force + orbitalZ;
+
+                    // Apply velocity with damping (less damping than planets for erratic movement)
+                    asteroid.userData.velocity.multiplyScalar(0.99);
+
+                    // Update position
+                    asteroid.position.add(asteroid.userData.velocity);
+
+                    // Rotate asteroid on all axes for tumbling effect
+                    asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
+                    asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
+                    asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
                 }
             });
 
