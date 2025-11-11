@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gargantua Black Hole</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            color: #FFFFFF;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: none;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #info {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+        
+        #subtitle {
+            font-size: 0.9em;
+            opacity: 0.7;
+            letter-spacing: 3px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        button {
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #FFFFFF;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        button:hover {
+            background: rgba(0, 181, 201, 0.3);
+            border-color: #00B5C9;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background: rgba(0, 181, 201, 0.5);
+        }
+        
+        #volumeControl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+            accent-color: #00B5C9;
+        }
+        
+        .label {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+        
+        #startOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+        
+        #startOverlay h2 {
+            font-size: 3em;
+            font-weight: 300;
+            letter-spacing: 10px;
+            margin-bottom: 30px;
+            color: #00B5C9;
+        }
+        
+        #startOverlay p {
+            font-size: 1.2em;
+            opacity: 0.7;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        #infoPanel {
+            position: absolute;
+            top: 100px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(0, 181, 201, 0.5);
+            padding: 20px;
+            max-width: 300px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        #infoPanel h3 {
+            color: #00B5C9;
+            font-size: 1.2em;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 181, 201, 0.3);
+            padding-bottom: 10px;
+        }
+
+        #infoPanel .info-item {
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        #infoPanel .info-label {
+            color: #00B5C9;
+            font-weight: 500;
+        }
+
+        #toggleInfo {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 10;
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5em;
+                letter-spacing: 4px;
+            }
+
+            #subtitle {
+                font-size: 0.7em;
+                letter-spacing: 2px;
+            }
+
+            #info {
+                top: 15px;
+            }
+
+            #infoPanel {
+                top: 70px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+                padding: 15px;
+                font-size: 0.75em;
+            }
+
+            #infoPanel h3 {
+                font-size: 1em;
+                letter-spacing: 1px;
+            }
+
+            #controls {
+                bottom: 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                padding: 12px 24px;
+                font-size: 1em;
+                min-width: 140px;
+            }
+
+            #volumeControl {
+                width: 100%;
+                justify-content: center;
+            }
+
+            input[type="range"] {
+                width: 120px;
+            }
+
+            #toggleInfo {
+                top: 15px;
+                right: 15px;
+                padding: 8px 16px;
+            }
+
+            #startOverlay h2 {
+                font-size: 2em;
+                letter-spacing: 6px;
+            }
+
+            #startOverlay p {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.2em;
+                letter-spacing: 3px;
+            }
+
+            #infoPanel {
+                font-size: 0.7em;
+                padding: 10px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* Touch-friendly styles */
+        @media (hover: none) and (pointer: coarse) {
+            button {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            input[type="range"] {
+                height: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="startOverlay">
+        <h2>GARGANTUA</h2>
+        <p id="startText">CLICK TO ENTER</p>
+    </div>
+    <script>
+        // Update start text for touch devices
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            document.getElementById('startText').textContent = 'TAP TO ENTER';
+        }
+    </script>
+    
+    <div id="container"></div>
+    
+    <div id="info">
+        <h1>GARGANTUA</h1>
+        <div id="subtitle">SUPERMASSIVE BLACK HOLE</div>
+    </div>
+
+    <button id="toggleInfo">HIDE INFO</button>
+
+    <div id="infoPanel">
+        <h3>GARGANTUA</h3>
+        <div class="info-item">
+            <span class="info-label">Type:</span> Supermassive Black Hole
+        </div>
+        <div class="info-item">
+            <span class="info-label">Mass:</span> 100 Million Solar Masses
+        </div>
+        <div class="info-item">
+            <span class="info-label">Event Horizon:</span> 2.95×10⁸ km
+        </div>
+        <div class="info-item">
+            <span class="info-label">Location:</span> Interstellar (Fiction)
+        </div>
+        <div class="info-item">
+            <span class="info-label">Rotation:</span> Near-Maximal (a ≈ 1)
+        </div>
+        <div class="info-item">
+            <span class="info-label">Hawking Radiation:</span> Negligible
+        </div>
+        <div class="info-item">
+            <span class="info-label">Time Dilation:</span> Extreme near event horizon
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="soundToggle">SOUND: ON</button>
+        <div id="volumeControl">
+            <span class="label">VOLUME</span>
+            <input type="range" id="volume" min="0" max="100" value="30">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Mobile detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // Performance settings based on device
+        const performanceSettings = {
+            particleCount: isMobile ? 1000 : 2000,
+            planetCount: isMobile ? 5 : 8,
+            asteroidCount: isMobile ? 15 : 30,
+            antialias: !isMobile,
+            pixelRatio: isMobile ? Math.min(window.devicePixelRatio, 2) : window.devicePixelRatio
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({
+            antialias: performanceSettings.antialias,
+            alpha: true,
+            powerPreference: isMobile ? 'low-power' : 'high-performance'
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(performanceSettings.pixelRatio);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        camera.position.set(0, 5, 15);
+        camera.lookAt(0, 0, 0);
+
+        // OrbitControls for 360-degree rotation (optimized for touch)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = isMobile ? 0.7 : 0.5;
+        controls.enableZoom = true;
+        controls.zoomSpeed = isMobile ? 0.8 : 1.0;
+        controls.minDistance = 0.1;
+        controls.maxDistance = 1000;
+        controls.enablePan = false;
+        controls.touches = {
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN
+        };
+
+        // Particle Pop Sound System
+        let audioContext;
+        let masterGain;
+        let audioEnabled = true;
+        let soundInitialized = false;
+        let lastPopTime = 0;
+        const popCooldown = 50; // Minimum ms between pops to avoid overwhelming
+
+        function initAudio() {
+            if (soundInitialized) return;
+            soundInitialized = true;
+
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Master gain control - much lower volume for subtle pops
+            masterGain = audioContext.createGain();
+            const initialVolume = document.getElementById('volume').value / 100;
+            masterGain.gain.setValueAtTime(initialVolume * 0.15, audioContext.currentTime);
+            masterGain.connect(audioContext.destination);
+        }
+
+        // Create a subtle particle pop sound
+        function playParticlePop(distance, velocity) {
+            if (!audioContext || !audioEnabled) return;
+
+            const now = Date.now();
+            if (now - lastPopTime < popCooldown) return; // Rate limiting
+            lastPopTime = now;
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            // Frequency based on distance (closer = higher pitch)
+            const baseFreq = 800 + (1000 / Math.max(distance, 3));
+            osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, audioContext.currentTime + 0.1);
+
+            osc.type = 'sine';
+
+            // High-pass filter for crisp, subtle pop
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(400, audioContext.currentTime);
+
+            // Very short, quick pop envelope
+            const amplitude = Math.min(velocity * 0.02, 0.08); // Based on velocity
+            gain.gain.setValueAtTime(amplitude, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.08);
+        }
+
+        // Start overlay interaction (works with both click and touch)
+        const startOverlay = document.getElementById('startOverlay');
+        const startExperience = function() {
+            // Initialize audio on user interaction
+            initAudio();
+            startOverlay.style.display = 'none';
+
+            // Prevent default behaviors on mobile
+            if (isMobile) {
+                document.body.addEventListener('touchmove', function(e) {
+                    // Only prevent if not interacting with controls
+                    if (!e.target.closest('#controls') && !e.target.closest('#toggleInfo')) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+        };
+
+        startOverlay.addEventListener('click', startExperience);
+        startOverlay.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            startExperience();
+        });
+
+        // Event horizon (black sphere) - reduce segments on mobile
+        const sphereSegments = isMobile ? 32 : 64;
+        const eventHorizonGeometry = new THREE.SphereGeometry(2, sphereSegments, sphereSegments);
+        const eventHorizonMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 1
+        });
+        const eventHorizon = new THREE.Mesh(eventHorizonGeometry, eventHorizonMaterial);
+        scene.add(eventHorizon);
+
+        // Photon sphere (subtle glow)
+        const photonSphereGeometry = new THREE.SphereGeometry(2.1, sphereSegments, sphereSegments);
+        const photonSphereMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const photonSphere = new THREE.Mesh(photonSphereGeometry, photonSphereMaterial);
+        scene.add(photonSphere);
+
+        // Accretion disk shader
+        const diskVertexShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            void main() {
+                vUv = uv;
+                vPosition = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        const diskFragmentShader = `
+            uniform float time;
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            
+            void main() {
+                vec2 center = vec2(0.5, 0.5);
+                float dist = distance(vUv, center) * 2.0;
+                
+                // Inner disk hole
+                if (dist < 0.3) {
+                    discard;
+                }
+                
+                // Doppler shift - approaching side brighter
+                float angle = atan(vPosition.y, vPosition.x);
+                float dopplerBoost = 1.0 + 0.4 * sin(angle + time * 0.5);
+                
+                // Temperature gradient (inner hot, outer cool)
+                float temp = 1.0 - smoothstep(0.3, 1.0, dist);
+                
+                // Color based on temperature
+                vec3 innerColor = vec3(1.0, 0.9, 0.8); // White hot
+                vec3 midColor = vec3(1.0, 0.6, 0.3);   // Orange
+                vec3 outerColor = vec3(0.8, 0.4, 0.2); // Reddish
+                
+                vec3 color = mix(outerColor, innerColor, temp * dopplerBoost);
+                
+                // Intensity falloff
+                float intensity = smoothstep(1.0, 0.3, dist) * 0.9;
+                intensity *= dopplerBoost;
+                
+                // Add turbulence
+                float turbulence = sin(dist * 20.0 - time * 2.0) * 0.1 + 0.9;
+                intensity *= turbulence;
+                
+                gl_FragColor = vec4(color * intensity, intensity * 0.8);
+            }
+        `;
+
+        // Main accretion disk (reduce segments on mobile)
+        const diskSegments = isMobile ? 64 : 128;
+        const diskGeometry = new THREE.RingGeometry(2.5, 8, diskSegments, isMobile ? 32 : 64);
+        const diskMaterial = new THREE.ShaderMaterial({
+            vertexShader: diskVertexShader,
+            fragmentShader: diskFragmentShader,
+            uniforms: {
+                time: { value: 0 }
+            },
+            transparent: true,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        const disk = new THREE.Mesh(diskGeometry, diskMaterial);
+        disk.rotation.x = Math.PI / 2;
+        scene.add(disk);
+
+        // Upper gravitational lensing effect (multiple rings for depth)
+        const lensRingMaterial = new THREE.ShaderMaterial({
+            vertexShader: diskVertexShader,
+            fragmentShader: `
+                uniform float time;
+                varying vec2 vUv;
+                void main() {
+                    vec2 center = vec2(0.5, 0.5);
+                    float dist = distance(vUv, center) * 2.0;
+                    float intensity = smoothstep(1.0, 0.5, dist) * 0.5;
+                    intensity *= (0.8 + 0.2 * sin(time * 2.0));
+                    vec3 color = vec3(1.0, 0.7, 0.4);
+                    gl_FragColor = vec4(color * intensity, intensity * 0.4);
+                }
+            `,
+            uniforms: {
+                time: { value: 0 }
+            },
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide
+        });
+
+        // Create multiple lensing rings at different angles (fewer on mobile)
+        const lensRings = [];
+        const lensRingCount = isMobile ? 2 : 3;
+        for (let i = 0; i < lensRingCount; i++) {
+            const ringGeom = new THREE.RingGeometry(3.5 + i * 0.5, 6 + i * 0.5, diskSegments);
+            const ring = new THREE.Mesh(ringGeom, lensRingMaterial.clone());
+            ring.rotation.x = Math.PI / 2 + (i - 1) * 0.15;
+            ring.position.y = (i - 1) * 0.3;
+            scene.add(ring);
+            lensRings.push(ring);
+        }
+
+        // Particles (stars being attracted)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particleCount = performanceSettings.particleCount;
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+        const lifetimes = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            const radius = 20 + Math.random() * 30;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            
+            positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i3 + 2] = radius * Math.cos(phi);
+            
+            velocities.push(new THREE.Vector3(0, 0, 0));
+            lifetimes.push(Math.random());
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            color: 0xFFFFFF,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        // Planets being sucked in
+        const planets = [];
+        const planetColors = [0xFF6B6B, 0x4ECDC4, 0xFFE66D, 0x95E1D3, 0xF38181, 0xAA96DA];
+
+        function createPlanet() {
+            const size = 0.2 + Math.random() * 0.4;
+            const planetSegments = isMobile ? 16 : 32;
+            const geometry = new THREE.SphereGeometry(size, planetSegments, planetSegments);
+            const material = new THREE.MeshStandardMaterial({
+                color: planetColors[Math.floor(Math.random() * planetColors.length)],
+                emissive: planetColors[Math.floor(Math.random() * planetColors.length)],
+                emissiveIntensity: 0.2,
+                roughness: 0.7,
+                metalness: 0.3
+            });
+            const planet = new THREE.Mesh(geometry, material);
+
+            // Random starting position (far from black hole)
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 25 + Math.random() * 15;
+            planet.position.x = Math.cos(angle) * distance;
+            planet.position.z = Math.sin(angle) * distance;
+            planet.position.y = (Math.random() - 0.5) * 10;
+
+            // Orbital velocity
+            planet.userData.velocity = new THREE.Vector3(0, 0, 0);
+            planet.userData.orbitalSpeed = 0.01 + Math.random() * 0.02;
+
+            scene.add(planet);
+            planets.push(planet);
+        }
+
+        // Create initial planets
+        for (let i = 0; i < performanceSettings.planetCount; i++) {
+            createPlanet();
+        }
+
+        // Asteroid Field System
+        const asteroids = [];
+        const asteroidColors = [0x8B7355, 0x696969, 0x5C4033, 0x808080, 0x654321];
+        const asteroidCount = performanceSettings.asteroidCount;
+
+        function createAsteroid() {
+            // Create irregular asteroid shape
+            const size = 0.15 + Math.random() * 0.35;
+            const detail = isMobile ? 0 : 1; // Lower detail on mobile
+            const geometry = new THREE.IcosahedronGeometry(size, detail);
+
+            // Randomly distort vertices for irregular shape
+            const positions = geometry.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+                const vertex = new THREE.Vector3(
+                    positions.getX(i),
+                    positions.getY(i),
+                    positions.getZ(i)
+                );
+                const distortion = 0.7 + Math.random() * 0.6;
+                vertex.multiplyScalar(distortion);
+                positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshStandardMaterial({
+                color: asteroidColors[Math.floor(Math.random() * asteroidColors.length)],
+                roughness: 0.9,
+                metalness: 0.1,
+                flatShading: true
+            });
+
+            const asteroid = new THREE.Mesh(geometry, material);
+
+            // Random starting position - closer to accretion disk
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 12 + Math.random() * 20;
+            asteroid.position.x = Math.cos(angle) * distance;
+            asteroid.position.z = Math.sin(angle) * distance;
+            asteroid.position.y = (Math.random() - 0.5) * 8;
+
+            // Random rotation for variety
+            asteroid.rotation.x = Math.random() * Math.PI * 2;
+            asteroid.rotation.y = Math.random() * Math.PI * 2;
+            asteroid.rotation.z = Math.random() * Math.PI * 2;
+
+            // Physics data
+            asteroid.userData.velocity = new THREE.Vector3(0, 0, 0);
+            asteroid.userData.orbitalSpeed = 0.02 + Math.random() * 0.03;
+            asteroid.userData.rotationSpeed = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.04,
+                (Math.random() - 0.5) * 0.04,
+                (Math.random() - 0.5) * 0.04
+            );
+
+            scene.add(asteroid);
+            asteroids.push(asteroid);
+        }
+
+        // Create asteroid field
+        for (let i = 0; i < asteroidCount; i++) {
+            createAsteroid();
+        }
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xFFAA66, 2, 100);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // Dynamic Information System
+        const blackHoleFacts = [
+            { label: "Type", value: "Supermassive Black Hole" },
+            { label: "Mass", value: "100 Million Solar Masses" },
+            { label: "Event Horizon", value: "2.95×10⁸ km" },
+            { label: "Rotation", value: "Near-Maximal (a ≈ 1)" },
+            { label: "Time Dilation", value: "Extreme near event horizon" },
+            { label: "Schwarzschild Radius", value: "~295 million kilometers" },
+            { label: "Surface Gravity", value: "1.5×10⁶ m/s²" },
+            { label: "Escape Velocity", value: "Speed of light (c)" },
+            { label: "Accretion Disk Temp", value: "~10⁶ Kelvin" },
+            { label: "Spaghettification Zone", value: "Beyond tidal radius" },
+            { label: "Photon Sphere", value: "1.5× event horizon radius" },
+            { label: "Ergosphere", value: "Rotating spacetime region" },
+            { label: "Innermost Stable Orbit", value: "3× Schwarzschild radius" },
+            { label: "Relativistic Jets", value: "Near light-speed plasma" },
+            { label: "Gravitational Redshift", value: "z → ∞ at horizon" },
+            { label: "Frame Dragging", value: "Extreme Kerr geometry" },
+            { label: "Information Paradox", value: "Quantum state unknown" },
+            { label: "Singularity", value: "Ring-shaped (Kerr type)" },
+            { label: "Hawking Temperature", value: "6.17×10⁻¹⁴ K" },
+            { label: "Evaporation Time", value: "~10⁹⁹ years" },
+            { label: "Orbital Period (ISCO)", value: "~2 milliseconds" },
+            { label: "Tidal Forces", value: "Extreme near horizon" },
+            { label: "Causality Violation", value: "Inside ergosphere" },
+            { label: "Entropy", value: "10⁷⁷ bits (Bekenstein)" },
+            { label: "Luminosity", value: "10⁴⁶ erg/s (active)" },
+            { label: "Magnetic Fields", value: "~10⁴ Gauss (disk)" },
+            { label: "Spin Parameter", value: "0.998 (near-extremal)" },
+            { label: "Doppler Effect", value: "Asymmetric disk emission" },
+            { label: "Gravitational Lensing", value: "Einstein ring visible" },
+            { label: "Coordinate System", value: "Boyer-Lindquist coords" },
+            { label: "Asteroid Field", value: `${asteroidCount} rocky debris objects` },
+            { label: "Asteroid Composition", value: "Iron, silicate, carbon-rich" },
+            { label: "Asteroid Orbit", value: "Erratic, decaying paths" },
+            { label: "Debris Accretion Rate", value: "Continuous infall" }
+        ];
+
+        let usedFacts = [];
+        let currentFactIndex = 0;
+
+        function updateInfoPanel() {
+            if (usedFacts.length === blackHoleFacts.length) {
+                usedFacts = [];
+            }
+
+            const availableFacts = blackHoleFacts.filter((_, index) => !usedFacts.includes(index));
+            const randomIndex = Math.floor(Math.random() * availableFacts.length);
+            const factIndex = blackHoleFacts.indexOf(availableFacts[randomIndex]);
+            usedFacts.push(factIndex);
+
+            const selectedFacts = [];
+            for (let i = 0; i < 7; i++) {
+                const fact = availableFacts[(randomIndex + i) % availableFacts.length];
+                if (fact) selectedFacts.push(fact);
+            }
+
+            const infoPanel = document.getElementById('infoPanel');
+            let html = '<h3>GARGANTUA</h3>';
+            selectedFacts.forEach(fact => {
+                html += `<div class="info-item"><span class="info-label">${fact.label}:</span> ${fact.value}</div>`;
+            });
+            infoPanel.innerHTML = html;
+        }
+
+        // Update info every 8 seconds
+        setInterval(updateInfoPanel, 8000);
+
+        // Controls
+        let infoPanelVisible = true;
+        document.getElementById('toggleInfo').addEventListener('click', function() {
+            infoPanelVisible = !infoPanelVisible;
+            document.getElementById('infoPanel').style.display = infoPanelVisible ? 'block' : 'none';
+            this.textContent = infoPanelVisible ? 'HIDE INFO' : 'SHOW INFO';
+        });
+
+        document.getElementById('soundToggle').addEventListener('click', function() {
+            if (!soundInitialized) {
+                initAudio();
+            }
+            audioEnabled = !audioEnabled;
+            if (masterGain && audioContext) {
+                const volume = document.getElementById('volume').value / 100;
+                masterGain.gain.setValueAtTime(audioEnabled ? volume * 0.15 : 0, audioContext.currentTime);
+            }
+            this.textContent = `SOUND: ${audioEnabled ? 'ON' : 'OFF'}`;
+        });
+
+        document.getElementById('volume').addEventListener('input', function() {
+            if (!soundInitialized) {
+                initAudio();
+            }
+            const volume = this.value / 100;
+            if (masterGain && audioContext && audioEnabled) {
+                masterGain.gain.setValueAtTime(volume * 0.15, audioContext.currentTime);
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Update shader uniforms
+            diskMaterial.uniforms.time.value = time;
+            lensRings.forEach(ring => {
+                ring.material.uniforms.time.value = time;
+            });
+
+            // Rotate accretion disk and lensing rings
+            disk.rotation.z += 0.003;
+            lensRings.forEach((ring, idx) => {
+                ring.rotation.z += 0.002 * (1 + idx * 0.2);
+            });
+
+            // Rotate event horizon
+            eventHorizon.rotation.y += 0.001;
+
+            // Update particles - velocity inversely proportional to distance
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const x = positions[i3];
+                const y = positions[i3 + 1];
+                const z = positions[i3 + 2];
+
+                const distance = Math.sqrt(x * x + y * y + z * z);
+
+                // Gravitational attraction - stronger when closer
+                // Speed inversely proportional to distance
+                const speedFactor = 1.0 / (distance * 0.5);
+                const force = 0.8 / (distance * distance);
+
+                velocities[i].x -= (x / distance) * force * speedFactor;
+                velocities[i].y -= (y / distance) * force * speedFactor;
+                velocities[i].z -= (z / distance) * force * speedFactor;
+
+                // Apply velocity
+                positions[i3] += velocities[i].x;
+                positions[i3 + 1] += velocities[i].y;
+                positions[i3 + 2] += velocities[i].z;
+
+                // Reset if too close to singularity
+                if (distance < 2.5) {
+                    // Calculate velocity magnitude for sound
+                    const velocity = Math.sqrt(
+                        velocities[i].x * velocities[i].x +
+                        velocities[i].y * velocities[i].y +
+                        velocities[i].z * velocities[i].z
+                    );
+
+                    // Play subtle pop sound when particle crosses event horizon
+                    playParticlePop(distance, velocity);
+
+                    const radius = 20 + Math.random() * 30;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+
+                    positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i3 + 2] = radius * Math.cos(phi);
+
+                    velocities[i].set(0, 0, 0);
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Update planets
+            planets.forEach((planet, index) => {
+                const pos = planet.position;
+                const distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+
+                if (distance < 2.5) {
+                    // Calculate velocity magnitude for sound
+                    const vel = planet.userData.velocity;
+                    const velocity = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+
+                    // Play pop sound when planet crosses event horizon
+                    playParticlePop(distance, velocity * 10); // Amplify for planets
+
+                    // Planet crossed event horizon - respawn
+                    scene.remove(planet);
+                    planets.splice(index, 1);
+                    createPlanet();
+                } else {
+                    // Calculate gravitational pull
+                    const force = 15.0 / (distance * distance);
+                    const dirX = -pos.x / distance;
+                    const dirY = -pos.y / distance;
+                    const dirZ = -pos.z / distance;
+
+                    // Add orbital motion (perpendicular to radial direction)
+                    const orbitalX = -dirZ * planet.userData.orbitalSpeed;
+                    const orbitalZ = dirX * planet.userData.orbitalSpeed;
+
+                    // Update velocity
+                    planet.userData.velocity.x += dirX * force + orbitalX;
+                    planet.userData.velocity.y += dirY * force;
+                    planet.userData.velocity.z += dirZ * force + orbitalZ;
+
+                    // Apply velocity with damping
+                    planet.userData.velocity.multiplyScalar(0.98);
+
+                    // Update position
+                    planet.position.add(planet.userData.velocity);
+
+                    // Rotate planet
+                    planet.rotation.x += 0.01;
+                    planet.rotation.y += 0.015;
+                }
+            });
+
+            // Update asteroids
+            asteroids.forEach((asteroid, index) => {
+                const pos = asteroid.position;
+                const distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+
+                if (distance < 2.5) {
+                    // Calculate velocity magnitude for sound
+                    const vel = asteroid.userData.velocity;
+                    const velocity = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+
+                    // Play pop sound when asteroid crosses event horizon (slightly different pitch)
+                    playParticlePop(distance, velocity * 8);
+
+                    // Asteroid crossed event horizon - respawn
+                    scene.remove(asteroid);
+                    asteroids.splice(index, 1);
+                    createAsteroid();
+                } else {
+                    // Calculate gravitational pull (asteroids are affected more than planets)
+                    const force = 12.0 / (distance * distance);
+                    const dirX = -pos.x / distance;
+                    const dirY = -pos.y / distance;
+                    const dirZ = -pos.z / distance;
+
+                    // Add orbital motion (perpendicular to radial direction)
+                    const orbitalX = -dirZ * asteroid.userData.orbitalSpeed;
+                    const orbitalZ = dirX * asteroid.userData.orbitalSpeed;
+
+                    // Update velocity
+                    asteroid.userData.velocity.x += dirX * force + orbitalX;
+                    asteroid.userData.velocity.y += dirY * force;
+                    asteroid.userData.velocity.z += dirZ * force + orbitalZ;
+
+                    // Apply velocity with damping (less damping than planets for erratic movement)
+                    asteroid.userData.velocity.multiplyScalar(0.99);
+
+                    // Update position
+                    asteroid.position.add(asteroid.userData.velocity);
+
+                    // Rotate asteroid on all axes for tumbling effect
+                    asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
+                    asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
+                    asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
+                }
+            });
+
+            // Update controls
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        // Window resize and orientation change handling
+        let resizeTimeout;
+        function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                // Update pixel ratio for mobile devices on orientation change
+                if (isMobile) {
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                }
+            }, 100);
+        }
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+
+        animate();
+    </script>
+</body>
+</html>
